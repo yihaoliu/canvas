@@ -1,0 +1,24 @@
+{
+  "name": "canvas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "parcel index.html -p 4000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yihaoliu/canvas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yihaoliu/canvas/issues"
+  },
+  "homepage": "https://github.com/yihaoliu/canvas#readme",
+  "dependencies": {
+    "babel-preset-env": "^1.6.1"
+  }
+}
