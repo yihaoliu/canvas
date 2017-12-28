@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({3:[function(require,module,exports) {
+})({5:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -243,10 +243,9 @@ function getWindowDetil() {
     winHeight = document.documentElement.clientHeight;
     winWidth = document.documentElement.clientWidth;
   }
-  console.log(winHeight);
   return {
-    width: winWidth,
-    height: winHeight
+    width: winWidth - 15,
+    height: winHeight - 15
   };
 }
 function getOS() {
@@ -268,7 +267,7 @@ exports.default = {
   captureTouch: captureTouch,
   getOS: getOS
 };
-},{}],4:[function(require,module,exports) {
+},{}],3:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -277,14 +276,14 @@ Object.defineProperty(exports, "__esModule", {
 var rect = function rect() {
   this.isclick = false;
 };
-rect.prototype.draw = function (cxt, data) {
-  console.log(this.click);
-  cxt.fillStyle = this.isclick ? "#FF0000" : "#000000";
-  cxt.fillRect(data.x, data.y, data.width, data.height);
+rect.prototype.draw = function (cxt, data, zoom) {
+
+  cxt.fillStyle = data.mousToRect ? "#FF0000" : "#000000";
+  cxt.fillRect(data.x * zoom, data.y * zoom, data.width * zoom, data.height * zoom);
 };
 
 exports.default = rect;
-},{}],5:[function(require,module,exports) {
+},{}],4:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -293,6 +292,54 @@ Object.defineProperty(exports, "__esModule", {
 var data = [{ x: 50, y: 50, width: 50, height: 30 }, { x: 150, y: 50, width: 50, height: 30 }, { x: 50, y: 150, width: 50, height: 30 }, { x: 250, y: 50, width: 50, height: 30 }, { x: 50, y: 250, width: 50, height: 30 }, { x: 50, y: 350, width: 50, height: 30 }];
 
 exports.default = data;
+},{}],7:[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var addEvent = function (window, undefined) {
+  var _eventCompat = function _eventCompat(event) {
+    var type = event.type;
+    if (type == 'DOMMouseScroll' || type == 'mousewheel') {
+      event.delta = event.wheelDelta ? event.wheelDelta / 120 : -(event.detail || 0) / 3;
+    }
+    //alert(event.delta);
+    if (event.srcElement && !event.target) {
+      event.target = event.srcElement;
+    }
+    if (!event.preventDefault && event.returnValue !== undefined) {
+      event.preventDefault = function () {
+        event.returnValue = false;
+      };
+    }
+    /* 
+        ......其他一些兼容性处理 */
+    return event;
+  };
+  if (window.addEventListener) {
+    return function (el, type, fn, capture) {
+      if (type === "mousewheel" && document.mozFullScreen !== undefined) {
+        type = "DOMMouseScroll";
+      }
+      el.addEventListener(type, function (event) {
+        fn.call(this, _eventCompat(event));
+      }, capture || false);
+    };
+  } else if (window.attachEvent) {
+    return function (el, type, fn, capture) {
+      el.attachEvent("on" + type, function (event) {
+        event = event || window.event;
+        fn.call(el, _eventCompat(event));
+      });
+    };
+  }
+  return function () {};
+}(window);
+exports.default = addEvent;
+},{}],6:[function(require,module,exports) {
+module.exports="/dist/63f785fbb663f351f4b8705d6d484f7b.png";
 },{}],2:[function(require,module,exports) {
 "use strict";
 
@@ -308,6 +355,14 @@ var _data = require("./data");
 
 var _data2 = _interopRequireDefault(_data);
 
+var _addEvent = require("./utils/addEvent");
+
+var _addEvent2 = _interopRequireDefault(_addEvent);
+
+var _bg = require("../images/bg.png");
+
+var _bg2 = _interopRequireDefault(_bg);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 (function (glbal) {
@@ -316,7 +371,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   //     // console.log("draw",i++);
   //     // utils.loop(draw)
   // }
-
+  var img = new Image();
+  img.src = _bg2.default;
 
   var myCan = function myCan() {
     var win = _utils2.default.getWindowDetil();
@@ -324,9 +380,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     this.height = win.height;
     this.elem = null;
     this.ctx = null;
+    this.img = null;
+    this.mouse = {
+      x: null,
+      y: null
+    };
+    this.zoom = 1;
   };
   myCan.prototype.render = function (elem, canDetail, callback) {
+    var that = this;
     var node = document.createElement("canvas");
+    node.style.margin = 0;
+    node.style.padding = 0;
     if (canDetail) {
       for (var key in canDetail) {
         node[key] = canDetail[key];
@@ -339,10 +404,52 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       node.height = this.height;
     }
     elem.appendChild(node);
-    var mouse = _utils2.default.captureTouch(node);
+    //鼠标监听
+    listener(node, function (detail) {
+
+      that.mouse = Object.assign(that.mouse, detail);
+      var zoom = that.zoom;
+      for (var i = 0; i < _data2.default.length; i++) {
+        var item = _data2.default[i];
+        var max = {
+          x: (item.x + item.width) * zoom,
+          y: (item.y + item.height) * zoom
+        };
+        var min = {
+          x: item.x * zoom,
+          y: item.y * zoom
+        };
+
+        var mousToRect = false;
+        var haveMous = that.mouse.x && that.mouse.y;
+        if (haveMous) {
+          that.mouse.x = that.mouse.x * zoom;
+          that.mouse.y = that.mouse.y * zoom;
+        }
+
+        if (haveMous && that.mouse.x > min.x && that.mouse.x < max.x && that.mouse.y > min.y && that.mouse.y < max.y) {
+          item.mousToRect = !item.mousToRect;
+          _data2.default[i] = item;
+          break;
+        }
+      }
+      that.draw(_data2.default);
+    });
+    //滚轮监听
+    (0, _addEvent2.default)(node, "mousewheel", function (event) {
+      if (event.delta < 0) {
+        that.zoom -= 0.02;
+      } else {
+        that.zoom += 0.02;
+      }
+      that.draw(_data2.default);
+    });
+
     this.elem = node;
     this.ctx = node.getContext('2d');
-
+    img.onload = function () {
+      that.draw(_data2.default);
+    };
     callback && callback();
 
     // var newRect= new rect();
@@ -350,31 +457,42 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     return node;
   };
   myCan.prototype.draw = function (detail) {
-    var _this = this;
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    var that = this;
 
+    var zoom = this.zoom;
     var rectArr = [];
 
+    that.img = img;
+    that.ctx.drawImage(that.img, 0, 0, img.width * that.zoom, img.height * that.zoom);
     detail.map(function (item, index) {
       var newRect = new _rect2.default();
-      newRect.draw(_this.ctx, detail[index]);
-      rectArr.push(new _rect2.default());
+      newRect.draw(that.ctx, detail[index], that.zoom);
+      // rectArr.push(new rect())
     });
-
-    // rectArr.map((item,index)=>{
-    //    console.log(detail[index])
-    //     item.draw(this.ctx,detail[index]);
-    // })
   };
   var newCan = new myCan();
   var app = document.getElementById("app");
   newCan.render(app);
   // newCan.draw()
-  newCan.draw(_data2.default);
 
+
+  function dataFilter() {}
   // global.canvas = newCan;
+  function listener(elem, callback) {
+    (0, _addEvent2.default)(elem, 'mousedown', function (event) {
+      var e = event || window.event;
+      var mouse = {
+        x: e.clientX,
+        y: e.clientY
+      };
+      var elemDetail = elem.getBoundingClientRect();
 
+      callback && callback({ x: mouse.x - elemDetail.x, y: mouse.y - elemDetail.y });
+    }, false);
+  }
 })(undefined);
-},{"./utils":3,"./rect":4,"./data":5}],0:[function(require,module,exports) {
+},{"./utils":5,"./rect":3,"./data":4,"./utils/addEvent":7,"../images/bg.png":6}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -392,7 +510,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:64476/');
+  var ws = new WebSocket('ws://localhost:57622/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

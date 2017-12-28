@@ -196,10 +196,9 @@ function getWindowDetil (){
         winHeight = document.documentElement.clientHeight;
         winWidth = document.documentElement.clientWidth;
     }
-    console.log(winHeight)
     return {
-        width:winWidth,
-        height:winHeight
+        width:winWidth-15,
+        height:winHeight-15
     }
 }
 function getOS() {
