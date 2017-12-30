@@ -61,10 +61,10 @@ import imgurl from '../images/bg.png'
                 
                 var mousToRect = false;
                 var haveMous = that.mouse.x && that.mouse.y
-                if(haveMous){
-                    that.mouse.x = that.mouse.x*zoom;
-                    that.mouse.y = that.mouse.y*zoom;
-                }
+                // if(haveMous){
+                //     that.mouse.x = that.mouse.x*zoom;
+                //     that.mouse.y = that.mouse.y*zoom;
+                // }
                
                 if(haveMous && (that.mouse.x > min.x && that.mouse.x < max.x) && (that.mouse.y > min.y && that.mouse.y < max.y)){
                    item.mousToRect = !item.mousToRect;
@@ -101,9 +101,12 @@ import imgurl from '../images/bg.png'
         
         var zoom = this.zoom;
         var rectArr = [];
-       
+        var mobile = {
+            x: 0,
+            y:0,
+        }
         that.img = img;
-        that.ctx.drawImage(that.img,0,0,img.width*that.zoom,img.height*that.zoom)
+        that.ctx.drawImage(that.img, mobile.x,mobile.x,img.width*that.zoom,img.height*that.zoom)
         detail.map((item,index)=>{
             var newRect = new rect();
             newRect.draw(that.ctx,detail[index],that.zoom);
