@@ -16,10 +16,21 @@ import imgurl from '../images/bg.png'
         this.elem = null;
         this.ctx = null;
         this.img = null;
+        this.data = [].concat(data);
+        this.imgOrigin = {
+            x:0,
+            y:0
+        }
+        //鼠标坐标其实是坐标原点的位置
         this.mouse = {
             x:null,
             y:null
         };
+        this.mobile = {
+            x:0,
+            y:0
+        }
+
         this.zoom = 1;
     }
     myCan.prototype.render = function(elem,canDetail,callback){
@@ -41,11 +52,10 @@ import imgurl from '../images/bg.png'
         elem.appendChild(node);
         //鼠标监听
         listener(node,'mousedown',function(detail){
-            
             that.mouse = Object.assign(that.mouse,detail)
             var zoom = that.zoom;
-            for(var i=0;i<data.length;i++){
-                var item = data[i];
+            for(var i=0;i<that.data.length;i++){
+                var item = that.data[i];
                 var max = {
                     x:(item.x+item.width)*zoom,
                     y:(item.y+item.height)*zoom
@@ -57,52 +67,50 @@ import imgurl from '../images/bg.png'
                 var mousToRect = false;
                 var haveMous = that.mouse.x && that.mouse.y
                 if(haveMous && (that.mouse.x > min.x && that.mouse.x < max.x) && (that.mouse.y > min.y && that.mouse.y < max.y)){
-                   item.mousToRect = !item.mousToRect;
-                   data[i] = item;
-                   break;
+                    item.mousToRect = !item.mousToRect;
+                    that.data[i] = item;
+                    break;
                 }
             }
-            that.draw(data);
-        })
-        //鼠标移动监听事件
-        listener(node,'mousemove',function(detail) {
-           
-            that.mouse = Object.assign(that.mouse, detail)
-            
+            that.draw();
         })
         //滚轮监听
-        addEvent(node, "mousewheel", function(event) {
+        listener(node, "mousewheel", function (detail) {
             if (event.delta < 0) { 
                 that.zoom-=0.02
             }else{
                 that.zoom+=0.02
             }
-            that.draw(data)
+            that.mouse = Object.assign(that.mouse, detail)
+            that.mobile.x = (1 - that.zoom) * (that.mouse.x - that.imgOrigin.x);
+            that.mobile.y = (1 - that.zoom) * (that.mouse.y - that.imgOrigin.y);
+            that.imgOrigin.x = that.imgOrigin.x + that.mobile.x;
+            that.imgOrigin.y = that.imgOrigin.y + that.mobile.y;
+            that.draw()
         });
         
         this.elem = node;
         this.ctx = node.getContext('2d');
         img.onload = function () {
-            that.draw(data)
+            that.draw()
         }
         callback && callback();
         return node;
     }
     myCan.prototype.draw =function(detail){
         this.ctx.clearRect(0,0,this.width,this.height);
-        var that = this;
-        
-        var zoom = this.zoom;
         var rectArr = [];
-        var mobile = {
-            x: 0,
-            y:0,
-        }
-        that.img = img;
-        that.ctx.drawImage(that.img, mobile.x,mobile.x,img.width*that.zoom,img.height*that.zoom)
-        detail.map((item,index)=>{
+        this.img = img;
+        this.ctx.drawImage(this.img, this.imgOrigin.x, this.imgOrigin.y,img.width*this.zoom,img.height*this.zoom)
+        this.data.map((item,index)=>{
+
             var newRect = new rect();
-            newRect.draw(that.ctx,detail[index],that.zoom);
+            var everyOrigin = item;
+            everyOrigin.x = everyOrigin.x + this.mobile.x;
+            everyOrigin.y = everyOrigin.y + this.mobile.y;
+            this.data[index] = everyOrigin;
+            
+            newRect.draw(this.ctx,everyOrigin,this.zoom);
         })
     }
     var newCan = new myCan();
@@ -119,8 +127,10 @@ import imgurl from '../images/bg.png'
                 y:e.clientY
             }
             var elemDetail = elem.getBoundingClientRect();
+            var mouseToCan = { x: mouse.x - elemDetail.x, y: mouse.y - elemDetail.y };
+            var thatEvent = Object.assign({},e);
             
-            callback && callback({x:mouse.x-elemDetail.x,y:mouse.y-elemDetail.y})
+            callback && callback(Object.assign(thatEvent,mouseToCan))
         }, false);
     }
 

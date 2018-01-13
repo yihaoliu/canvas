@@ -377,10 +377,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     this.elem = null;
     this.ctx = null;
     this.img = null;
-    this.mouse = {
+    this.data = [].concat(_data2.default);
+    this.imgOrigin = {
+      x: 0,
+      y: 0
+      //鼠标坐标其实是坐标原点的位置
+    };this.mouse = {
       x: null,
       y: null
     };
+    this.mobile = {
+      x: 0,
+      y: 0
+    };
+
     this.zoom = 1;
   };
   myCan.prototype.render = function (elem, canDetail, callback) {
@@ -402,11 +412,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     elem.appendChild(node);
     //鼠标监听
     listener(node, 'mousedown', function (detail) {
-
       that.mouse = Object.assign(that.mouse, detail);
       var zoom = that.zoom;
-      for (var i = 0; i < _data2.default.length; i++) {
-        var item = _data2.default[i];
+      for (var i = 0; i < that.data.length; i++) {
+        var item = that.data[i];
         var max = {
           x: (item.x + item.width) * zoom,
           y: (item.y + item.height) * zoom
@@ -419,50 +428,51 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
         var haveMous = that.mouse.x && that.mouse.y;
         if (haveMous && that.mouse.x > min.x && that.mouse.x < max.x && that.mouse.y > min.y && that.mouse.y < max.y) {
           item.mousToRect = !item.mousToRect;
-          _data2.default[i] = item;
+          that.data[i] = item;
           break;
         }
       }
-      that.draw(_data2.default);
-    });
-    //鼠标移动监听事件
-    listener(node, 'mousemove', function (detail) {
-
-      that.mouse = Object.assign(that.mouse, detail);
+      that.draw();
     });
     //滚轮监听
-    (0, _addEvent2.default)(node, "mousewheel", function (event) {
+    listener(node, "mousewheel", function (detail) {
       if (event.delta < 0) {
         that.zoom -= 0.02;
       } else {
         that.zoom += 0.02;
       }
-      that.draw(_data2.default);
+      that.mouse = Object.assign(that.mouse, detail);
+      that.mobile.x = (1 - that.zoom) * (that.mouse.x - that.imgOrigin.x);
+      that.mobile.y = (1 - that.zoom) * (that.mouse.y - that.imgOrigin.y);
+      that.imgOrigin.x = that.imgOrigin.x + that.mobile.x;
+      that.imgOrigin.y = that.imgOrigin.y + that.mobile.y;
+      that.draw();
     });
 
     this.elem = node;
     this.ctx = node.getContext('2d');
     img.onload = function () {
-      that.draw(_data2.default);
+      that.draw();
     };
     callback && callback();
     return node;
   };
   myCan.prototype.draw = function (detail) {
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    var that = this;
+    var _this = this;
 
-    var zoom = this.zoom;
+    this.ctx.clearRect(0, 0, this.width, this.height);
     var rectArr = [];
-    var mobile = {
-      x: 0,
-      y: 0
-    };
-    that.img = img;
-    that.ctx.drawImage(that.img, mobile.x, mobile.x, img.width * that.zoom, img.height * that.zoom);
-    detail.map(function (item, index) {
+    this.img = img;
+    this.ctx.drawImage(this.img, this.imgOrigin.x, this.imgOrigin.y, img.width * this.zoom, img.height * this.zoom);
+    this.data.map(function (item, index) {
+
       var newRect = new _rect2.default();
-      newRect.draw(that.ctx, detail[index], that.zoom);
+      var everyOrigin = item;
+      everyOrigin.x = everyOrigin.x + _this.mobile.x;
+      everyOrigin.y = everyOrigin.y + _this.mobile.y;
+      _this.data[index] = everyOrigin;
+
+      newRect.draw(_this.ctx, everyOrigin, _this.zoom);
     });
   };
   var newCan = new myCan();
@@ -477,8 +487,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
         y: e.clientY
       };
       var elemDetail = elem.getBoundingClientRect();
+      var mouseToCan = { x: mouse.x - elemDetail.x, y: mouse.y - elemDetail.y };
+      var thatEvent = Object.assign({}, e);
 
-      callback && callback({ x: mouse.x - elemDetail.x, y: mouse.y - elemDetail.y });
+      callback && callback(Object.assign(thatEvent, mouseToCan));
     }, false);
   }
 })(undefined);
@@ -500,7 +512,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://' + window.location.hostname + ':52681/');
+  var ws = new WebSocket('ws://' + window.location.hostname + ':50620/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
