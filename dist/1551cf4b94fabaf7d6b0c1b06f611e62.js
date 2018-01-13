@@ -6,6 +6,7 @@
 // anything defined in a previous bundle is accessed via the
 // orig method which is the require for previous bundles
 
+// eslint-disable-next-line no-global-assign
 require = (function (modules, cache, entry) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof require === "function" && require;
@@ -68,7 +69,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({9:[function(require,module,exports) {
+})({7:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -267,7 +268,7 @@ exports.default = {
   captureTouch: captureTouch,
   getOS: getOS
 };
-},{}],6:[function(require,module,exports) {
+},{}],4:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -283,7 +284,7 @@ rect.prototype.draw = function (cxt, data, zoom) {
 };
 
 exports.default = rect;
-},{}],7:[function(require,module,exports) {
+},{}],5:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -292,7 +293,7 @@ Object.defineProperty(exports, "__esModule", {
 var data = [{ x: 50, y: 50, width: 50, height: 30 }, { x: 150, y: 50, width: 50, height: 30 }, { x: 50, y: 150, width: 50, height: 30 }, { x: 250, y: 50, width: 50, height: 30 }, { x: 50, y: 250, width: 50, height: 30 }, { x: 50, y: 350, width: 50, height: 30 }];
 
 exports.default = data;
-},{}],8:[function(require,module,exports) {
+},{}],6:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -314,8 +315,7 @@ var addEvent = function (window, undefined) {
         event.returnValue = false;
       };
     }
-    /* 
-        ......其他一些兼容性处理 */
+
     return event;
   };
   if (window.addEventListener) {
@@ -338,9 +338,9 @@ var addEvent = function (window, undefined) {
   return function () {};
 }(window);
 exports.default = addEvent;
-},{}],5:[function(require,module,exports) {
+},{}],3:[function(require,module,exports) {
 module.exports="/dist/c172ee786af68bcf950196d0f2964b88.png";
-},{}],4:[function(require,module,exports) {
+},{}],2:[function(require,module,exports) {
 "use strict";
 
 var _utils = require("./utils");
@@ -367,10 +367,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 (function (glbal) {
 
-  // function draw(){
-  //     // console.log("draw",i++);
-  //     // utils.loop(draw)
-  // }
   var img = new Image();
   img.src = _bg2.default;
 
@@ -405,7 +401,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     }
     elem.appendChild(node);
     //鼠标监听
-    listener(node, function (detail) {
+    listener(node, 'mousedown', function (detail) {
 
       that.mouse = Object.assign(that.mouse, detail);
       var zoom = that.zoom;
@@ -419,14 +415,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
           x: item.x * zoom,
           y: item.y * zoom
         };
-
         var mousToRect = false;
         var haveMous = that.mouse.x && that.mouse.y;
-        // if(haveMous){
-        //     that.mouse.x = that.mouse.x*zoom;
-        //     that.mouse.y = that.mouse.y*zoom;
-        // }
-
         if (haveMous && that.mouse.x > min.x && that.mouse.x < max.x && that.mouse.y > min.y && that.mouse.y < max.y) {
           item.mousToRect = !item.mousToRect;
           _data2.default[i] = item;
@@ -434,6 +424,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
         }
       }
       that.draw(_data2.default);
+    });
+    //鼠标移动监听事件
+    listener(node, 'mousemove', function (detail) {
+
+      that.mouse = Object.assign(that.mouse, detail);
     });
     //滚轮监听
     (0, _addEvent2.default)(node, "mousewheel", function (event) {
@@ -451,9 +446,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       that.draw(_data2.default);
     };
     callback && callback();
-
-    // var newRect= new rect();
-    // newRect.draw(this.ctx)
     return node;
   };
   myCan.prototype.draw = function (detail) {
@@ -471,19 +463,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     detail.map(function (item, index) {
       var newRect = new _rect2.default();
       newRect.draw(that.ctx, detail[index], that.zoom);
-      // rectArr.push(new rect())
     });
   };
   var newCan = new myCan();
   var app = document.getElementById("app");
   newCan.render(app);
-  // newCan.draw()
-
-
   function dataFilter() {}
-  // global.canvas = newCan;
-  function listener(elem, callback) {
-    (0, _addEvent2.default)(elem, 'mousedown', function (event) {
+  function listener(elem, type, callback) {
+    (0, _addEvent2.default)(elem, type, function (event) {
       var e = event || window.event;
       var mouse = {
         x: e.clientX,
@@ -495,7 +482,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     }, false);
   }
 })(undefined);
-},{"./utils":9,"./rect":6,"./data":7,"./utils/addEvent":8,"../images/bg.png":5}],0:[function(require,module,exports) {
+},{"./utils":7,"./rect":4,"./data":5,"./utils/addEvent":6,"../images/bg.png":3}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -513,7 +500,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:54500/');
+  var ws = new WebSocket('ws://' + window.location.hostname + ':52681/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -614,4 +601,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,4])
+},{}]},{},[0,2])

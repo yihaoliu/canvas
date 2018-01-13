@@ -6,10 +6,6 @@ import addEvent from "./utils/addEvent"
 import imgurl from '../images/bg.png'
 (function(glbal){
     
-    // function draw(){
-    //     // console.log("draw",i++);
-    //     // utils.loop(draw)
-    // }
     var img = new Image();
         img.src = imgurl;
 
@@ -44,7 +40,7 @@ import imgurl from '../images/bg.png'
         }
         elem.appendChild(node);
         //鼠标监听
-        listener(node,function(detail){
+        listener(node,'mousedown',function(detail){
             
             that.mouse = Object.assign(that.mouse,detail)
             var zoom = that.zoom;
@@ -58,14 +54,8 @@ import imgurl from '../images/bg.png'
                     x:item.x*zoom,
                     y:item.y*zoom,
                 }
-                
                 var mousToRect = false;
                 var haveMous = that.mouse.x && that.mouse.y
-                // if(haveMous){
-                //     that.mouse.x = that.mouse.x*zoom;
-                //     that.mouse.y = that.mouse.y*zoom;
-                // }
-               
                 if(haveMous && (that.mouse.x > min.x && that.mouse.x < max.x) && (that.mouse.y > min.y && that.mouse.y < max.y)){
                    item.mousToRect = !item.mousToRect;
                    data[i] = item;
@@ -73,6 +63,12 @@ import imgurl from '../images/bg.png'
                 }
             }
             that.draw(data);
+        })
+        //鼠标移动监听事件
+        listener(node,'mousemove',function(detail) {
+           
+            that.mouse = Object.assign(that.mouse, detail)
+            
         })
         //滚轮监听
         addEvent(node, "mousewheel", function(event) {
@@ -90,9 +86,6 @@ import imgurl from '../images/bg.png'
             that.draw(data)
         }
         callback && callback();
-
-        // var newRect= new rect();
-        // newRect.draw(this.ctx)
         return node;
     }
     myCan.prototype.draw =function(detail){
@@ -110,26 +103,16 @@ import imgurl from '../images/bg.png'
         detail.map((item,index)=>{
             var newRect = new rect();
             newRect.draw(that.ctx,detail[index],that.zoom);
-            // rectArr.push(new rect())
         })
-            
-      
-        
-       
-        
     }
     var newCan = new myCan();
     var app = document.getElementById("app")
     newCan.render(app);
-    // newCan.draw()
-    
-  
     function dataFilter(){
 
     }
-    // global.canvas = newCan;
-    function listener(elem,callback){
-       addEvent( elem,'mousedown', function (event) {
+    function listener(elem,type,callback){
+        addEvent(elem, type, function (event) {
             var e = event || window.event;
             var mouse = {
                 x:e.clientX,
